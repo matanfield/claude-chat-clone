@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const Anthropic = require('@anthropic-ai/sdk');
 require('dotenv').config();
 
@@ -18,6 +19,9 @@ const anthropic = new Anthropic({
 
 app.use(cors());
 app.use(express.json());
+
+// Serve static files from the React app build directory
+app.use(express.static(path.join(__dirname, '../dist')));
 
 app.post('/api/chat', async (req, res) => {
   try {
@@ -85,6 +89,11 @@ app.get('/api/test', (req, res) => {
     apiKeyPresent: !!process.env.ANTHROPIC_API_KEY,
     apiKeyPrefix: process.env.ANTHROPIC_API_KEY?.substring(0, 10) + '...'
   });
+});
+
+// Handle React routing, return all requests to React app
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
 app.listen(port, () => {

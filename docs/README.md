@@ -88,6 +88,25 @@ See [COMPONENTS.md](./COMPONENTS.md) for detailed component documentation.
 
 See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed architecture documentation.
 
+## Testing Setup
+
+1. Create a test environment file:
+   ```bash
+   cp .env.test.example .env.test
+   ```
+
+2. Configure test environment variables in `.env.test`:
+   ```
+   VITE_BACKEND_URL=http://localhost:3000
+   ```
+
+3. Run tests:
+   ```bash
+   npm run test
+   ```
+
+Note: Never commit actual API keys or sensitive information to version control. Use environment variables for all sensitive data.
+
 ## Contributing
 
 1. Fork the repository

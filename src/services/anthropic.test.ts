@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { generateResponse } from './anthropic';
+import { AnthropicMessage } from './anthropic/types';
 
 describe('Anthropic API Integration', () => {
   it('should validate message input', async () => {
@@ -7,12 +8,12 @@ describe('Anthropic API Integration', () => {
   });
 
   it('should handle empty message content', async () => {
-    const emptyMessage = { role: 'user', content: '' };
+    const emptyMessage: AnthropicMessage = { role: 'user', content: '' };
     await expect(generateResponse([emptyMessage])).resolves.toBeTruthy();
   });
 
   it('should successfully connect to Anthropic API', async () => {
-    const testMessage = {
+    const testMessage: AnthropicMessage = {
       role: 'user',
       content: 'Say hello world',
     };
@@ -27,7 +28,7 @@ describe('Anthropic API Integration', () => {
   });
 
   it('should handle multiple messages in conversation', async () => {
-    const messages = [
+    const messages: AnthropicMessage[] = [
       { role: 'user', content: 'Hello' },
       { role: 'assistant', content: 'Hi there!' },
       { role: 'user', content: 'How are you?' },

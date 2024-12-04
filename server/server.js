@@ -25,12 +25,19 @@ app.use(cors({
 
 app.use(express.json());
 
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  next();
+});
+
 app.post('/api/chat', async (req, res) => {
   try {
     const { messages } = req.body;
     
-    console.log('Raw request body:', req.body);
-    console.log('Received messages:', JSON.stringify(messages, null, 2));
+    console.log('Received chat request:', {
+      messageCount: messages?.length,
+      firstMessage: messages?.[0]
+    });
     
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: 'Messages must be an array' });
@@ -77,15 +84,14 @@ app.post('/api/chat', async (req, res) => {
       });
     }
   } catch (error) {
-    console.error('Server Error:', {
+    console.error('Chat endpoint error:', {
       name: error.name,
       message: error.message,
       stack: error.stack
     });
     res.status(500).json({ 
       error: 'Server Error',
-      details: error.message,
-      name: error.name
+      details: error.message
     });
   }
 });

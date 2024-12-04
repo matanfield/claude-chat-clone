@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Send, Loader2 } from 'lucide-react';
-import { useThreads } from '../../context/threadContextUtils';
+import { useThread } from '../../context/threadContextUtils';
 
 interface ChatInputProps {
   onSubmit: (content: string) => void;
@@ -8,7 +8,7 @@ interface ChatInputProps {
 
 const ChatInput: React.FC<ChatInputProps> = ({ onSubmit }) => {
   const [input, setInput] = useState('');
-  const { isLoading } = useThreads();
+  const { isLoading } = useThread();
 
   const handleSubmit = () => {
     if (input.trim() && !isLoading) {
@@ -18,7 +18,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSubmit }) => {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSubmit();
     }
@@ -31,7 +31,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSubmit }) => {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Type your message... (Command + Enter to send)"
+          placeholder="Type your message... (Enter to send, Shift + Enter for new line)"
           className="w-full p-4 pr-12 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 resize-none"
           rows={3}
           disabled={isLoading}

@@ -49,3 +49,4 @@ Thumbs.db
 !.env.example
 !server/.env.example
 !.env.test.example
+.vercel

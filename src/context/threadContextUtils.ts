@@ -3,10 +3,10 @@ import { ThreadContextType } from '../types';
 
 export const ThreadContext = createContext<ThreadContextType | undefined>(undefined);
 
-export const useThreads = () => {
+export const useThread = () => {
   const context = useContext(ThreadContext);
   if (context === undefined) {
-    throw new Error('useThreads must be used within a ThreadProvider');
+    throw new Error('useThread must be used within a ThreadProvider');
   }
   return context;
 }; 

@@ -1,34 +1,47 @@
-import { AnthropicMessage } from './types';
-import { createAnthropicError } from './error';
+import { Message } from '../../types';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-export const generateResponse = async (messages: AnthropicMessage[]): Promise<string> => {
+export const generateResponse = async (messages: Message[]): Promise<string> => {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/chat`, {
+    console.log('Full messages:', messages.map(msg => ({
+      id: msg.id,
+      content: msg.content,
+      is_ai: msg.is_ai
+    })));
+
+    const response = await fetch(`${API_URL}/api/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        messages,
-        systemPrompt: 'You are Claude, a helpful AI assistant.',
+        messages: messages.map(msg => ({
+          role: msg.is_ai ? 'assistant' : 'user',
+          content: msg.content
+        }))
       }),
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorText = await response.text();
+      console.error('API Response:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText
+      });
+      throw new Error(`API Error (${response.status}): ${errorText}`);
     }
 
     const data = await response.json();
-    
-    if (!data?.content?.[0]?.text) {
+    if (!data.message) {
+      console.error('Invalid API response:', data);
       throw new Error('Invalid response format from API');
     }
 
-    return data.content[0].text;
+    return data.message;
   } catch (error) {
-    console.error('Error generating response:', error);
-    throw createAnthropicError(error);
+    console.error('Error in generateResponse:', error);
+    throw error;
   }
 };

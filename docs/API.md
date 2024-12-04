@@ -163,3 +163,7 @@ app.use('/api/', limiter);
 4. Add request logging and monitoring
 5. Implement user authentication
 6. Add conversation history persistence 
+
+## Database Schema
+
+### Threads Table

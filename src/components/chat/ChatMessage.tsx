@@ -8,7 +8,7 @@ interface ChatMessageProps {
 }
 
 const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
-  const isAssistant = message.role === 'assistant';
+  const isAssistant = message.is_ai;
 
   return (
     <div className={`flex gap-4 items-start`}>

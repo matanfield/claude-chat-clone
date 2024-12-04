@@ -1,21 +1,57 @@
 export interface Message {
   id: number;
-  role: 'user' | 'assistant';
+  chat_id: number;
+  user_id: string;
   content: string;
+  is_ai: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
-export interface Thread {
+export interface Chat {
   id: number;
-  title: string;
+  project_id: number;
+  parent_chat_id: number | null;
+  head: string;
   messages: Message[];
-  createdAt: Date;
+  created_at: string;
+  updated_at: string;
 }
 
-export type ThreadContextType = {
-  threads: Thread[];
-  activeThreadId: number;
-  createThread: () => void;
-  setActiveThread: (id: number) => void;
-  addMessageToThread: (threadId: number, content: string) => void;
+export interface Project {
+  id: number;
+  user_id: string;
+  title: string;
+  chats: Chat[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ChatHead {
+  id: number;
+  chat_id: number;
+  message: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Outcome {
+  id: number;
+  chat_id: number;
+  outcome_type: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ThreadContextType {
+  projects: Project[];
+  activeProjectId: number | null;
+  activeChat: Chat | null;
+  createProject: (title: string) => Promise<void>;
+  createChat: (projectId: number, head: string) => Promise<void>;
+  setActiveProject: (projectId: number | null) => void;
+  setActiveChat: (chat: Chat | null) => void;
+  addMessageToChat: (chatId: number, content: string) => Promise<void>;
   isLoading: boolean;
-};
+}

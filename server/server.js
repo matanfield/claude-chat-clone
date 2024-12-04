@@ -1,14 +1,14 @@
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 const Anthropic = require('@anthropic-ai/sdk');
 require('dotenv').config();
 
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Verify API key is present
 if (!process.env.ANTHROPIC_API_KEY) {
-  console.error('ANTHROPIC_API_KEY is not set in environment variables');
+  console.error('ERROR: ANTHROPIC_API_KEY is not set in environment variables');
   process.exit(1);
 }
 
@@ -17,91 +17,96 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-app.use(cors());
-app.use(express.json());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  methods: ['GET', 'POST'],
+  credentials: true
+}));
 
-// Serve static files from the React app build directory
-app.use(express.static(path.join(__dirname, '../dist')));
+app.use(express.json());
 
 app.post('/api/chat', async (req, res) => {
   try {
-    const { messages, systemPrompt } = req.body;
+    const { messages } = req.body;
+    
+    console.log('Raw request body:', req.body);
+    console.log('Received messages:', JSON.stringify(messages, null, 2));
     
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: 'Messages must be an array' });
     }
 
-    console.log('Received request with messages:', JSON.stringify(messages, null, 2));
-    
-    // Validate messages format
-    if (!messages.every(m => m.role && m.content && typeof m.content === 'string')) {
-      return res.status(400).json({ error: 'Invalid message format. Each message must have role and content.' });
-    }
-
     // Format messages for Claude API
-    const formattedMessages = messages.map(({ role, content }) => ({
-      role: role === 'assistant' ? 'assistant' : 'user',
-      content: content.trim()
+    const formattedMessages = messages.map(msg => ({
+      role: msg.is_ai ? 'assistant' : 'user',
+      content: msg.content
     }));
 
-    console.log('Formatted messages:', JSON.stringify(formattedMessages, null, 2));
-    
-    const response = await anthropic.messages.create({
-      model: 'claude-3-opus-20240229',  // Updated to the latest Claude 3 model
-      max_tokens: 1024,
-      messages: formattedMessages,
-      system: systemPrompt || 'You are Claude, a helpful AI assistant.'
-    });
+    console.log('Formatted messages for Claude:', JSON.stringify(formattedMessages, null, 2));
 
-    console.log('Anthropic API response:', response);
-    res.json(response);
+    try {
+      const response = await anthropic.messages.create({
+        model: 'claude-3-opus-20240229',
+        max_tokens: 1024,
+        messages: formattedMessages,
+        system: "You are Claude, a helpful AI assistant."
+      });
+
+      console.log('Claude API response:', JSON.stringify(response, null, 2));
+      
+      if (!response.content || !response.content[0] || !response.content[0].text) {
+        console.error('Invalid Claude response format:', response);
+        throw new Error('Invalid response format from Claude API');
+      }
+
+      const message = response.content[0].text;
+      console.log('Sending response:', message);
+      res.json({ message });
+    } catch (apiError) {
+      console.error('Claude API Error:', {
+        name: apiError.name,
+        message: apiError.message,
+        status: apiError.status,
+        response: apiError.response?.data
+      });
+      
+      res.status(500).json({
+        error: 'Claude API Error',
+        details: apiError.message,
+        name: apiError.name
+      });
+    }
   } catch (error) {
-    console.error('Detailed server error:', {
+    console.error('Server Error:', {
       name: error.name,
       message: error.message,
-      stack: error.stack,
-      response: error.response?.data,
-      status: error.status,
-      headers: error.response?.headers
+      stack: error.stack
     });
-    
-    // More specific error handling
-    if (error.status === 401) {
-      return res.status(401).json({ error: 'Invalid API key' });
-    } else if (error.status === 400) {
-      return res.status(400).json({ error: 'Invalid request format' });
-    } else if (error.status === 404) {
-      return res.status(404).json({ error: 'Model not found. Please check the model name.' });
-    }
-    
     res.status(500).json({ 
-      error: error.message,
-      type: error.name,
-      details: error.response?.data || error.stack
+      error: 'Server Error',
+      details: error.message,
+      name: error.name
     });
   }
 });
 
-// Add a test endpoint
+// Test endpoint
 app.get('/api/test', (req, res) => {
   res.json({ 
     status: 'ok',
     apiKeyPresent: !!process.env.ANTHROPIC_API_KEY,
-    apiKeyPrefix: process.env.ANTHROPIC_API_KEY?.substring(0, 10) + '...'
+    apiKeyPrefix: process.env.ANTHROPIC_API_KEY ? 
+      `${process.env.ANTHROPIC_API_KEY.substring(0, 7)}...` : 
+      'not-set'
   });
-});
-
-// Handle React routing, return all requests to React app
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
   console.log('Environment:', {
     nodeEnv: process.env.NODE_ENV,
-    apiKeyPresent: !!process.env.ANTHROPIC_API_KEY,
-    apiKeyPrefix: process.env.ANTHROPIC_API_KEY?.substring(0, 10) + '...',
-    model: 'claude-3-opus-20240229'
+    frontendUrl: process.env.FRONTEND_URL,
+    hasApiKey: !!process.env.ANTHROPIC_API_KEY,
+    apiKeyPrefix: `${process.env.ANTHROPIC_API_KEY?.substring(0, 7)}...`
   });
 }); 
